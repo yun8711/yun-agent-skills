@@ -1,0 +1,196 @@
+{
+  "version": "1.0",
+  "description": "前端部署自动化完整配置示例",
+
+  "bastion": {
+    "host": "192.168.12.100",
+    "port": 2222,
+    "user": "liuyun",
+    "auth_method": "password",
+    "password": null,
+    "password_env_var": "DEPLOY_PASSWORD",
+    "connection_timeout": 30,
+    "description": "公司堡垒机配置（密码认证）"
+  },
+
+  "projects": {
+    "rhea": {
+      "build_param": "build",
+      "deploy_path": "/data/application/qiankun/subapp/rhea/",
+      "server_pattern": "12.168",
+      "backup_old_version": true,
+      "post_deploy_commands": [
+        "ls -la",
+        "echo 'Rhea微服务部署完成'",
+        "systemctl restart rhea-app 2>/dev/null || true"
+      ],
+      "description": "Rhea微服务前端项目",
+      "health_check_url": "http://localhost:8080/health",
+      "rollback_script": "rollback-rhea.sh"
+    },
+
+    "qiankun": {
+      "build_param": "production",
+      "deploy_path": "/data/application/qiankun/main/",
+      "server_pattern": "12.168",
+      "backup_old_version": true,
+      "post_deploy_commands": [
+        "npm run build 2>/dev/null || echo 'No build needed'",
+        "systemctl restart nginx",
+        "systemctl status nginx",
+        "echo 'Qiankun主应用部署完成'"
+      ],
+      "description": "Qiankun主应用",
+      "health_check_url": "http://localhost/health",
+      "rollback_script": "rollback-qiankun.sh"
+    },
+
+    "admin": {
+      "build_param": "prod",
+      "deploy_path": "/data/application/admin/",
+      "server_pattern": "12.169",
+      "backup_old_version": false,
+      "post_deploy_commands": [
+        "chown -R www-data:www-data .",
+        "chmod -R 755 .",
+        "systemctl reload apache2",
+        "echo 'Admin后台部署完成'"
+      ],
+      "description": "管理后台应用",
+      "health_check_url": "https://admin.company.com/health",
+      "rollback_script": "rollback-admin.sh"
+    }
+  },
+
+  "environments": {
+    "dev": {
+      "server_pattern": "12.168",
+      "description": "开发环境",
+      "backup_enabled": true,
+      "notification_enabled": false
+    },
+    "test": {
+      "server_pattern": "12.169",
+      "description": "测试环境",
+      "backup_enabled": true,
+      "notification_enabled": true
+    },
+    "staging": {
+      "server_pattern": "12.170",
+      "description": "预发布环境",
+      "backup_enabled": true,
+      "notification_enabled": true
+    },
+    "prod": {
+      "server_pattern": "12.171",
+      "description": "生产环境",
+      "backup_enabled": true,
+      "notification_enabled": true
+    }
+  },
+
+  "deployment": {
+    "max_retries": 3,
+    "retry_delay": 5,
+    "timeout": 300,
+    "cleanup_temp_files": true,
+    "log_level": "info",
+    "enable_progress_bar": true,
+    "parallel_deployments": false,
+    "max_parallel": 2
+  },
+
+  "security": {
+    "encrypt_passwords": true,
+    "password_env_var": "DEPLOY_PASSWORD",
+    "ssh_key_passphrase_env_var": "SSH_KEY_PASSPHRASE",
+    "allowed_ips": ["192.168.12.100", "10.0.0.0/8"],
+    "enable_audit_log": true,
+    "audit_log_path": "/var/log/kd-deploy/audit.log",
+    "session_timeout": 3600
+  },
+
+  "notifications": {
+    "enable": true,
+    "type": "email",
+    "recipients": [
+      "dev-team@company.com",
+      "ops-team@company.com"
+    ],
+    "on_success": true,
+    "on_failure": true,
+    "on_rollback": true,
+    "smtp_server": "smtp.company.com",
+    "smtp_port": 587,
+    "smtp_user": "deploy@company.com",
+    "smtp_password_env_var": "SMTP_PASSWORD"
+  },
+
+  "advanced": {
+    "custom_build_command": null,
+    "pre_deploy_hooks": [
+      "check-disk-space.sh",
+      "backup-database.sh"
+    ],
+    "post_deploy_hooks": [
+      "clear-cache.sh",
+      "update-cdn.sh"
+    ],
+    "rollback_strategy": "backup",
+    "health_check_url": null,
+    "health_check_timeout": 30,
+    "enable_metrics": true,
+    "metrics_endpoint": "http://metrics.company.com/deploy",
+
+    "docker_integration": {
+      "enabled": false,
+      "registry": "registry.company.com",
+      "namespace": "frontend",
+      "build_context": ".",
+      "dockerfile": "Dockerfile.deploy"
+    },
+
+    "kubernetes_integration": {
+      "enabled": false,
+      "kubeconfig": "~/.kube/config",
+      "namespace": "frontend",
+      "deployment_name": "frontend-app",
+      "container_name": "app",
+      "image_pull_policy": "Always"
+    },
+
+    "cloud_integration": {
+      "provider": null,
+      "region": "us-east-1",
+      "bucket": "company-deploy-artifacts",
+      "cdn_distribution_id": null
+    }
+  },
+
+  "monitoring": {
+    "enable": true,
+    "metrics": {
+      "deploy_duration": true,
+      "success_rate": true,
+      "error_rate": true,
+      "rollback_rate": true
+    },
+    "alerts": {
+      "on_deploy_failure": true,
+      "on_health_check_failure": true,
+      "thresholds": {
+        "max_deploy_time": 600,
+        "max_error_rate": 0.05
+      }
+    }
+  },
+
+  "rollback": {
+    "enable": true,
+    "strategy": "backup",
+    "max_backups": 10,
+    "backup_retention_days": 30,
+    "auto_rollback_on_failure": false,
+    "rollback_timeout": 300
+  }
+}

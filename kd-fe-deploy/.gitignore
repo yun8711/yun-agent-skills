@@ -1,0 +1,44 @@
+# 配置文件（包含敏感信息）
+config.json
+
+# 本地配置目录（用户本地堡垒机等敏感信息）
+~/.kd-deploy/
+
+# 日志文件
+*.log
+/tmp/
+
+# 构建产物
+*.zip
+dist/
+build/
+
+# 临时文件
+*.tmp
+*.bak
+
+# SSH相关（可选，不要提交私钥）
+# *.pem
+# id_rsa
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 备份文件
+*~

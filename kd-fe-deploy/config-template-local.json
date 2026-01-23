@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "description": "前端部署自动化本地配置文件模板（存储在用户本地，不应提交到版本控制）",
+
+  "bastion": {
+    "host": "192.168.12.100",
+    "port": 2222,
+    "user": "liuyun",
+    "auth_method": "password",
+    "password": null,
+    "password_env_var": "DEPLOY_PASSWORD",
+    "connection_timeout": 30,
+    "description": "堡垒机配置（敏感信息，请妥善保管）"
+  },
+
+  "defaults": {
+    "backup_old_version": true,
+    "max_retries": 3,
+    "timeout": 300,
+    "log_level": "info"
+  }
+}
