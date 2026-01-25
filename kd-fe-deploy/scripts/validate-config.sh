@@ -81,7 +81,7 @@ check_local_config() {
     if [[ -z "${!password_env_var:-}" ]]; then
         warning "环境变量 $password_env_var 未设置，请运行: export $password_env_var='your_password'"
     else
-        log "✅ 环境变量 $password_env_var 已设置"
+        log "环境变量 $password_env_var 已设置"
     fi
 
     success "本地配置验证通过"

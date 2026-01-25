@@ -47,24 +47,24 @@ check_config() {
     log "检查本地配置状态..."
 
     if [[ ! -d "$LOCAL_CONFIG_DIR" ]]; then
-        log "❌ 本地配置目录不存在: $LOCAL_CONFIG_DIR"
+        log "本地配置目录不存在: $LOCAL_CONFIG_DIR"
         return 1
     fi
 
     if [[ ! -f "$LOCAL_CONFIG" ]]; then
-        log "❌ 配置文件不存在: $LOCAL_CONFIG"
+        log "配置文件不存在: $LOCAL_CONFIG"
         return 1
     fi
 
     # 验证JSON语法
     if ! jq empty "$LOCAL_CONFIG" 2>/dev/null; then
-        log "❌ 配置文件JSON语法错误"
+        log "配置文件JSON语法错误"
         return 1
     fi
 
     # 检查必需配置
     if ! jq -e '.bastion' "$LOCAL_CONFIG" &>/dev/null; then
-        log "❌ 缺少bastion配置"
+        log "缺少bastion配置"
         return 1
     fi
 
@@ -72,17 +72,17 @@ check_config() {
     local user=$(jq -r '.bastion.user // ""' "$LOCAL_CONFIG")
     local auth_method=$(jq -r '.bastion.auth_method // ""' "$LOCAL_CONFIG")
 
-    log "✅ 堡垒机主机: $host"
-    log "✅ 堡垒机用户: $user"
-    log "✅ 认证方式: $auth_method"
+    log "堡垒机主机: $host"
+    log "堡垒机用户: $user"
+    log "认证方式: $auth_method"
 
     # 检查密码设置
     if [[ "$auth_method" == "password" ]]; then
         local password_env_var=$(jq -r '.bastion.password_env_var // "DEPLOY_PASSWORD"' "$LOCAL_CONFIG")
         if [[ -n "${!password_env_var:-}" ]]; then
-            log "✅ 环境变量 $password_env_var 已设置"
+            log "环境变量 $password_env_var 已设置"
         else
-            log "⚠️  环境变量 $password_env_var 未设置"
+            log "警告: 环境变量 $password_env_var 未设置"
             echo "请运行: export $password_env_var='your_password'"
         fi
     fi
@@ -168,9 +168,9 @@ interactive_config() {
     echo ""
     echo "密码设置检查:"
     if [[ -n "${!password_env_var:-}" ]]; then
-        echo "✅ 环境变量 $password_env_var 已设置"
+        echo "环境变量 $password_env_var 已设置"
     else
-        echo "⚠️  环境变量 $password_env_var 未设置"
+        echo "警告: 环境变量 $password_env_var 未设置"
         echo ""
         echo "请运行以下命令设置密码:"
         echo "  export $password_env_var='your_actual_password'"

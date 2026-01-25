@@ -46,9 +46,9 @@ check_password() {
 
     # 检查环境变量
     if [[ -n "${DEPLOY_PASSWORD:-}" ]]; then
-        log "✅ 环境变量 DEPLOY_PASSWORD 已设置"
+        log "环境变量 DEPLOY_PASSWORD 已设置"
     else
-        log "❌ 环境变量 DEPLOY_PASSWORD 未设置"
+        log "环境变量 DEPLOY_PASSWORD 未设置"
     fi
 
     # 检查配置文件
@@ -155,7 +155,7 @@ setup_password_interactive() {
         export DEPLOY_PASSWORD="$password"
 
         echo ""
-        echo "✅ 密码已设置到环境变量 DEPLOY_PASSWORD"
+        echo "密码已设置到环境变量 DEPLOY_PASSWORD"
         echo ""
         echo "为了永久保存，请将以下命令添加到你的shell配置文件:"
         echo "  echo 'export DEPLOY_PASSWORD=\"your_password\"' >> ~/.bashrc  # 或 ~/.zshrc"
@@ -180,8 +180,8 @@ setup_password_interactive() {
         jq --arg pwd "$password" '.bastion.password = $pwd' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
         echo ""
-        echo "✅ 密码已保存到配置文件"
-        echo "⚠️  请确保配置文件不会被提交到版本控制系统"
+        echo "密码已保存到配置文件"
+        echo "警告: 请确保配置文件不会被提交到版本控制系统"
     fi
 
     # 测试连接

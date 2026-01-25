@@ -154,22 +154,21 @@ setup_environment() {
 validate_environment() {
     log "验证部署环境..."
 
-    # 检查配置文件
-    local config_file="${SCRIPT_DIR}/../config.json"
+    # 检查本地配置文件
+    local config_file="${HOME}/.kd-deploy/config.json"
     if [[ ! -f "$config_file" ]]; then
-        error "配置文件不存在: $config_file"
-        echo "请复制 config-template.json 到 config.json 并配置"
+        error "本地配置文件不存在: $config_file"
+        echo ""
+        echo "请运行以下命令创建本地配置:"
+        echo "  mkdir -p ~/.kd-deploy"
+        echo "  cp kd-fe-deploy/config-template-local.json ~/.kd-deploy/config.json"
+        echo "  vim ~/.kd-deploy/config.json"
         exit 1
     fi
 
     # 验证配置
     if ! "$SCRIPT_DIR/validate-config.sh" --skip-network; then
         error "配置验证失败"
-    fi
-
-    # 检查项目是否存在
-    if ! jq -e ".projects.\"$PROJECT_NAME\"" "$config_file" &>/dev/null; then
-        error "项目 '$PROJECT_NAME' 未在配置中定义"
     fi
 
     success "环境验证完成"

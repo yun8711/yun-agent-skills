@@ -1,52 +1,5 @@
 {
-  "name": "rhea-frontend",
+  "name": "my-frontend-project",
   "version": "1.0.0",
-  "description": "Rhea微服务前端项目",
-
-  "deploy": {
-    "version": "1.0",
-    "description": "Rhea项目部署配置",
-
-    "build": {
-      "command": "yk zip-dist -b build",
-      "output_pattern": "*.zip"
-    },
-
-    "server": {
-      "pattern": "12.168",
-      "description": "开发环境服务器"
-    },
-
-    "target": {
-      "path": "/data/application/qiankun/subapp/rhea/",
-      "backup": true,
-      "post_commands": [
-        "ls -la",
-        "echo 'Rhea前端部署完成'"
-      ]
-    },
-
-    "environments": {
-      "dev": {
-        "server_pattern": "12.168",
-        "description": "开发环境"
-      },
-      "test": {
-        "server_pattern": "12.169",
-        "description": "测试环境"
-      },
-      "prod": {
-        "server_pattern": "12.170",
-        "description": "生产环境",
-        "confirm_required": true
-      }
-    }
-  },
-
-  "scripts": {
-    "build": "yk build",
-    "deploy": "./kd-fe-deploy/scripts/full-deploy.sh",
-    "deploy:dev": "./kd-fe-deploy/scripts/full-deploy.sh --env dev",
-    "deploy:prod": "./kd-fe-deploy/scripts/full-deploy.sh --env prod"
-  }
+  "deploy-path": "/data/application/qiankun/subapp/rhea/"
 }
