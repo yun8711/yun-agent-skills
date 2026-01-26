@@ -1,0 +1,277 @@
+---
+description: kd-fe 项目整体概况和架构说明
+alwaysApply: true
+---
+
+# kd-fe 概况
+
+## 概述
+
+**kd-fe** 是一个基于 Vue 2.6、element-ui、qiankun、webpack 的微前端应用，由主应用 sol-fe 及其他若干个子应用模块共同构成。
+
+## daas-fe 模块简介
+
+**daas-fe （数据服务，DaaS - Data as a Service）** 前端子应用，提供 API 管理、应用管理、服务市场等核心功能。
+
+## 技术栈
+
+### 核心框架
+
+- **Vue**：2.6.12
+- **Vue Router**：3.5.4
+- **Vuex**：3.6.2
+- **Element UI**：^2.15.14（UI 组件库）
+- **@kd/components**：4.0.13（团队内部组件库）
+
+### 构建工具
+
+- **Vue CLI**：~5.0.9
+- **Webpack**：^5.101.3
+- **Babel**：^7.28.4
+
+### 代码质量工具
+
+- **ESLint**：^7.32.0（代码检查）
+- **Prettier**：^2.8.8（代码格式化）
+- **Stylelint**：^14.16.1（样式检查）
+- **Husky**：^8.0.3（Git hooks）
+- **Commitlint**：^17.8.1（提交信息规范）
+
+### 核心依赖
+
+- **axios**：^1.12.2（HTTP 请求）
+- **lodash**：^4.17.21（工具函数库）
+- **dayjs**：^1.11.18（日期处理）
+- **echarts**：5.4.1（图表库）
+- **monaco-editor**：^0.34.1（代码编辑器）
+- **wangeditor**：^4.7.15（富文本编辑器）
+- **nprogress**：^0.2.0（进度条）
+- **cron-parser**：^4.9.0（Cron 表达式解析）
+
+### 样式处理
+
+- **Sass/SCSS**：^1.92.1
+- **normalize.css**：^8.0.1（CSS 重置）
+
+## 项目结构
+
+```
+daas-fe/
+├── .cursor/              # Cursor 项目配置
+│   ├── rules/           # 项目规则文件
+│   └── skills/          # 项目技能文件
+├── .husky/              # Git hooks 配置
+├── public/              # 静态资源
+├── scripts/             # 构建脚本
+├── src/                 # 源代码
+│   ├── assets/          # 静态资源（图标、图片）
+│   ├── components/      # 全局组件
+│   ├── constant/        # 常量定义
+│   ├── layouts/         # 布局组件
+│   ├── mixins/          # Vue Mixins
+│   ├── router/          # 路由配置
+│   ├── server/          # API 接口定义
+│   ├── store/           # Vuex 状态管理
+│   ├── styles/         # 全局样式
+│   ├── utils/           # 工具函数
+│   └── views/           # 页面视图
+├── .eslintrc.js         # ESLint 配置
+├── .prettierrc.js       # Prettier 配置
+├── .stylelintrc.js      # Stylelint 配置
+├── vue.config.js        # Vue CLI 配置
+└── vue.custom.js        # 自定义配置
+```
+
+## 核心目录说明
+
+### src/server/
+
+API 接口定义目录，按业务模块组织：
+
+- `api-manage.js` - API 管理相关接口
+- `app-manage.js` - 应用管理相关接口
+- `data-source.js` - 数据源相关接口
+- `api-monitor.js` - API 监控相关接口
+- `service-category.js` - 服务分类相关接口
+- `strategy.js` - 策略相关接口
+- 等等...
+
+### src/views/
+
+页面视图目录，按功能模块组织：
+
+- `api-manage/` - API 管理模块（列表、详情、编辑、监控、发布）
+- `app-manage/` - 应用管理模块
+- `server-market/` - 服务市场模块
+- `my-service/` - 我的服务模块
+- `apply/` - 申请管理模块
+- `service-overview/` - 服务概览模块
+- `strategy/` - 策略管理模块
+- `resource-group/` - 资源组管理模块
+- `404/` - 404 错误页
+
+### src/mixins/
+
+Vue Mixins 目录：
+
+- `table-mixin.js` - 表格页面 Mixin
+- `table-with-search.js` - 带搜索的表格页面 Mixin
+
+### src/utils/
+
+工具函数目录：
+
+- `request.js` - HTTP 请求封装（基于 axios）
+- `downloadFile.js` - 文件下载工具
+- `nprogress.js` - 进度条工具
+- `breadcrumb.js` - 面包屑工具
+- `router-push.js` - 路由跳转工具
+- 等等...
+
+## 开发环境要求
+
+- **Node.js**：>= 14.0.0
+- **包管理器**：npm / pnpm
+- **浏览器支持**：
+  - Chrome >= 91
+  - Firefox >= 90
+  - Edge >= 91
+
+## 开发命令
+
+```bash
+# 开发环境启动
+npm run serve
+
+# qiankun 模式启动
+npm run serve-qk
+
+# 生产环境构建
+npm run build
+
+# 构建并生成分析报告
+npm run report
+
+# 代码检查并自动修复
+npm run lint
+
+# 样式检查并自动修复
+npm run lint:style
+
+# 部署到服务器
+npm run deploy
+
+# 部署到服务器（qiankun 模式）
+npm run deploy:k
+```
+
+## 构建配置
+
+### 代码分割
+
+生产环境自动进行代码分割：
+
+- `chunk-libs` - 第三方依赖（node_modules）
+- `chunk-commons` - 公共组件
+- `chunk-lodash` - lodash 单独打包
+- `chunk-element` - Element UI 单独打包
+- `chunk-echarts` - ECharts 单独打包
+- `chunk-monaco` - Monaco Editor 单独打包
+- `chunk-kd` - @kd/components 单独打包
+
+### 微前端支持
+
+项目支持作为 qiankun 子应用运行：
+
+- 打包为 UMD 格式
+- 支持独立运行和微前端模式
+- 通过 `vue.custom.js` 配置环境
+
+### 特殊功能
+
+- **Monaco Editor**：支持 MySQL 语法高亮
+- **SVG 图标**：使用 svg-sprite-loader 处理
+- **代码检查**：集成 code-inspector-plugin
+- **版本信息**：通过 BranchVersionPlugin 注入构建信息
+
+## 开发规范
+
+### 代码规范
+
+- 使用 ESLint + Prettier 进行代码检查和格式化
+- 使用 Stylelint 进行样式检查
+- 提交前自动执行 lint-staged 检查
+
+### Git 规范
+
+- 使用 Husky 管理 Git hooks
+- 提交信息遵循 Commitlint 规范
+- 提交前自动执行代码检查
+
+### 项目约定
+
+- 组件命名：PascalCase
+- 文件命名：kebab-case
+- 变量/方法命名：camelCase
+- 常量命名：UPPER_SNAKE_CASE
+
+详细规范请参考：
+- `code-standards.mdc` - 代码风格和规范
+- `api-requests.mdc` - API 请求规范
+
+## 配置文件说明
+
+### vue.custom.js
+
+项目自定义配置文件，包含：
+
+- 环境配置（开发/生产/测试）
+- 公共路径配置
+- 代理配置
+- 端口配置
+- qiankun 相关配置
+
+### vue.config.js
+
+Vue CLI 配置文件，包含：
+
+- Webpack 配置
+- 代码分割配置
+- Monaco Editor 配置
+- SVG 图标处理
+- 构建优化配置
+
+### .eslintrc.js
+
+ESLint 配置，主要规则：
+
+- Vue 组件规范
+- JavaScript 代码规范
+- Prettier 集成
+
+### .prettierrc.js
+
+Prettier 配置：
+
+- 行宽：120 字符
+- 缩进：2 空格
+- 引号：双引号
+- 分号：必须
+- 末尾逗号：多行时保留
+
+## 注意事项
+
+1. **Vue 2 项目**：项目基于 Vue 2.6，注意与 Vue 3 的差异
+2. **微前端支持**：支持独立运行和作为 qiankun 子应用运行
+3. **代码分割**：生产环境自动进行代码分割优化
+4. **环境变量**：通过 `.env.development` 和 `.env.production` 配置
+5. **路径别名**：使用 `@` 指向 `src` 目录
+6. **请求拦截**：根据业务需求，自动添加 `tenantId`、`projectId`、`menuKey` 请求头
+7. **自定义配置文件**：使用 `vue.custom.js` 集中管理所有动态配置项，会影响构建、本地运行行为
+
+## 相关资源
+
+- **项目规范文档**：`.cursor/skills/kd-fe-dev/references/`
+- **组件库文档**：以 kd- 开头的业务组件通过 kd-components MCP 查看 `@kd/components`
+- **Element UI 文档**：以 el- 开头的组件可以通过 element-ui MCP 或 https://element.eleme.cn/ 查看
+- **Vue 2 文档**：https://v2.cn.vuejs.org/
