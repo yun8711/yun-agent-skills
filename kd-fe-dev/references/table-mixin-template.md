@@ -11,10 +11,12 @@
 - 在最简单的情况下，只需在使用table-mixin时指定queryApi即可实现一个表格页面
 
 ```javascript
+// 表格分页+搜索公共功能
+
 /**
  * 用法示例
  *
- * import { createTableMixin } from "@/mixins/table-mixin";
+ * import { createTableMixin } from "@/mixins/table-mixin-v2";
  * export default {
  *   mixins: [createTableMixin({
  *     queryApi: queryList,
@@ -40,7 +42,7 @@ import debounce from "lodash/debounce";
  * @param {Object} options.autoSearchDebounceTime - 防抖时间，默认500毫秒
  * @returns {Object} Vue mixin对象
  */
-export function createTableMixin (options = {}) {
+export function createTableMixin(options = {}) {
   const {
     debug = false,
     autoQueryOnCreated = true,
@@ -115,8 +117,13 @@ export function createTableMixin (options = {}) {
     },
 
     created() {
+      // 自动搜索功能，即autoSearchOnChange为true时，会在组件未初始化完成时就触发查询，所以autoSearchOnChange默认为false
+      // 如果autoQueryOnCreated为true，则自动调用queryList查询，此时自动搜索功能不开启
       if (this.autoQueryOnCreated) {
         this.queryList(true);
+      } else {
+        // 如果autoQueryOnCreated为false，则自动开启自动搜索功能
+        this.openAutoSearchOnChange();
       }
     },
 
@@ -162,6 +169,10 @@ export function createTableMixin (options = {}) {
 
       autoSearchChange(obj) {
         debugLog("autoSearchChange", obj, this.debouncedAutoSearchChange);
+        // 关键：如果所有值都为空，则不触发查询，否则会在初始化时触发查询
+        if (Object.values(obj).every((value) => value === null || value === undefined || value === "")) {
+          return;
+        }
         // 使用防抖版本
         if (!this.debouncedAutoSearchChange) return;
         this.debouncedAutoSearchChange(obj);
@@ -202,7 +213,6 @@ export function createTableMixin (options = {}) {
         const queryParams = this.queryParamsHandle(defaultParams) || [];
         // 考虑到多参数情况，转换为数组
         const params = Array.isArray(queryParams) ? queryParams : [queryParams];
-        if(!queryApi) return;
         // 触发查询
         this.tableLoading = true;
         // 调用查询方法
@@ -228,9 +238,6 @@ export function createTableMixin (options = {}) {
        * @param {object} defaultParams - 默认查询参数
        * @returns {array} - 查询参数
        */
-      generateQueryParams(defaultParams) {
-        return [defaultParams];
-      },
       queryParamsHandle(defaultParams) {
         return [defaultParams];
       },
@@ -379,4 +386,5 @@ export function createTableMixin (options = {}) {
     },
   };
 }
+
 ```
