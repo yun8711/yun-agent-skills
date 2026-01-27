@@ -38,7 +38,7 @@ description: kd-fe 前端项目开发完整指南。提供项目及代码规范�
 
 ### 5. 开发过程管理
 
-- 使用git提交代码，参考：[流程说明](refreences/workflow-commit.md)
+- 审查待提交代码，并提交，参考：[流程说明](refreences/workflow-commit.md)
 
 ### 5. 其他业务
 
