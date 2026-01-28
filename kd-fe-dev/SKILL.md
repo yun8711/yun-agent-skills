@@ -30,7 +30,6 @@ description: kd-fe 前端项目开发完整指南。提供项目及代码规范�
 - 搜索框+表格页面，参考：[页面模板](references/table-search-template.md)
 - 高级筛选+搜索框+表格页面，参考：[页面模板](references/table-advanced-template.md)
 
-
 ### 4. 解决方案
 
 - 时间表达式（cron）组件，参考：[示例](references/cron.md)
@@ -40,6 +39,6 @@ description: kd-fe 前端项目开发完整指南。提供项目及代码规范�
 
 - 审查待提交代码，并提交，参考：[流程说明](refreences/workflow-commit.md)
 
-### 5. 其他业务
+### 6. 其他业务
 
 - 根据代码提交记录生成周报统计，参考：[示例](references/weekly-reports.md)

@@ -37,16 +37,18 @@ import debounce from "lodash/debounce";
  * @param {Object} options.isPaging - 是否分页查询，默认true
  * @param {Object} options.recordsField - 赋值给tableData的字段
  * @param {Object} options.totalField - 赋值给pageConf.total的字段
- * @param {Object} options.autoQueryOnCreated - 是否在created中自动调用queryList查询，默认true
- * @param {Object} options.autoSearchOnChange - 是否在change时自动触发查询，默认false
+ * @param {Object} options.autoInitQuery - 是否自动初始化查询，默认true
+//  * @param {Object} options.autoQueryOnCreated - 是否在created中自动调用queryList查询，默认true
+//  * @param {Object} options.autoSearchOnChange - 是否在change时自动触发查询，默认false
  * @param {Object} options.autoSearchDebounceTime - 防抖时间，默认500毫秒
  * @returns {Object} Vue mixin对象
  */
 export function createTableMixin(options = {}) {
   const {
     debug = false,
-    autoQueryOnCreated = true,
-    autoSearchOnChange = false,
+    autoInitQuery = true,
+    // autoQueryOnCreated = true,
+    // autoSearchOnChange = true,
     autoSearchDebounceTime = 500,
     queryApi = null,
     isPaging = true,
@@ -75,8 +77,8 @@ export function createTableMixin(options = {}) {
       return {
         // 记录调用mixin的参数，方便在devtools中查看
         mixinOptions: options,
+        autoInitQuery: autoInitQuery,
         // 搜索参数
-        // searchParams: {},
         autoSearchParams: {},
 
         // 分页配置
@@ -99,14 +101,11 @@ export function createTableMixin(options = {}) {
         // 表格排序参数
         sortParams: {},
 
-        // 是否在created中自动调用queryList查询
-        autoQueryOnCreated,
-
-        // 是否在change时自动触发查询
-        autoSearchOnChange,
-
         // 防抖函数引用
         debouncedAutoSearchChange: null,
+
+        // 记录autoSearch触发次数
+        autoSearchCount: 0,
       };
     },
 
@@ -114,17 +113,6 @@ export function createTableMixin(options = {}) {
       selectNum() {
         return this.tableSelectData.length || 0;
       },
-    },
-
-    created() {
-      // 自动搜索功能，即autoSearchOnChange为true时，会在组件未初始化完成时就触发查询，所以autoSearchOnChange默认为false
-      // 如果autoQueryOnCreated为true，则自动调用queryList查询，此时自动搜索功能不开启
-      if (this.autoQueryOnCreated) {
-        this.queryList(true);
-      } else {
-        // 如果autoQueryOnCreated为false，则自动开启自动搜索功能
-        this.openAutoSearchOnChange();
-      }
     },
 
     beforeDestroy() {
@@ -140,56 +128,39 @@ export function createTableMixin(options = {}) {
         this.queryList(true);
       },
 
-      autoSearchReset() {
+      autoSearchReset(obj) {
+        debugLog("重置搜索框参数", obj);
         this.tableReset && this.tableReset();
-        // this.queryList(true);
-      },
-
-      // 内部处理方法，用于防抖
-      _autoSearchChangeHandler(obj) {
-        debugLog("_autoSearchChangeHandler", obj);
-        if (!obj) return;
-
-        // 更新搜索参数到searchParams中，如果参数值为空，则删除searchParams中的对应key
-        Object.keys(obj).forEach((key) => {
-          if (obj[key] || !isEmpty(obj[key])) {
-            // this.searchParams[key] = obj[key];
-            this.autoSearchParams[key] = obj[key];
-          } else {
-            // delete this.searchParams[key];
-            delete this.autoSearchParams[key];
-          }
-        });
-
-        // 如果autoSearchOnChange为true，则自动触发查询
-        if (this.autoSearchOnChange) {
-          this.queryList(true);
-        }
       },
 
       autoSearchChange(obj) {
-        debugLog("autoSearchChange", obj, this.debouncedAutoSearchChange);
-        // 关键：如果所有值都为空，则不触发查询，否则会在初始化时触发查询
-        if (Object.values(obj).every((value) => value === null || value === undefined || value === "")) {
+        debugLog("搜索框参数变化", this.autoSearchCount, obj);
+        this._updateAutoSearchParams(obj);
+        if (this.autoInitQuery && this.autoSearchCount === 0) {
+          this.queryList(true);
+        }
+        this.autoSearchCount++;
+        // 使用防抖版本
+        if (!this.debouncedAutoSearchChange) {
+          this.debouncedAutoSearchChange = debounce(this.queryList, autoSearchDebounceTime);
           return;
         }
-        // 使用防抖版本
-        if (!this.debouncedAutoSearchChange) return;
-        this.debouncedAutoSearchChange(obj);
+        this.debouncedAutoSearchChange(true);
       },
-
-      // 在页面初次queryList完成后，开启自动搜索功能
-      openAutoSearchOnChange() {
-        debugLog("openAutoSearchOnChange", this.autoSearchOnChange);
-        // 初始化防抖的autoSearchChange方法
-        this.debouncedAutoSearchChange = debounce(this._autoSearchChangeHandler, autoSearchDebounceTime);
-        this.autoSearchOnChange = true;
+      // 更新autoSearchParams方法:如果参数值为空，则删除searchParams中的对应key
+      _updateAutoSearchParams(obj) {
+        Object.keys(obj).forEach((key) => {
+          if (obj[key] || !isEmpty(obj[key])) {
+            this.autoSearchParams[key] = obj[key];
+          } else {
+            delete this.autoSearchParams[key];
+          }
+        });
       },
-
       // ===== 表格基础方法 =====
       // 表格查询方法
       queryList(isReset = false) {
-        debugLog("触发queryList", isReset);
+        debugLog("执行queryList", isReset);
         if (this.tableLoading) return;
         // 重置分页数据
         if (isReset) {
@@ -210,9 +181,12 @@ export function createTableMixin(options = {}) {
           defaultParams.size = this.pageConf.pageSize;
         }
         // 调用组件内的自定义参数处理方法，生成查询参数
-        const queryParams = this.queryParamsHandle(defaultParams) || [];
+        const queryParams = this.queryParamsHandle(defaultParams);
+        debugLog("queryList queryParams", queryParams);
+        if (queryParams === false) return;
         // 考虑到多参数情况，转换为数组
         const params = Array.isArray(queryParams) ? queryParams : [queryParams];
+
         // 触发查询
         this.tableLoading = true;
         // 调用查询方法
@@ -227,16 +201,21 @@ export function createTableMixin(options = {}) {
           })
           .finally(() => {
             this.tableLoading = false;
-            this.openAutoSearchOnChange();
+            // this.openAutoSearchOnChange();
+            // if (!this.debouncedAutoSearchChange) {
+            //   this.debouncedAutoSearchChange = debounce(this.queryList, autoSearchDebounceTime);
+            // }
           });
       },
 
       queryResetHandle() {},
 
       /**
-       * 为查询方法生成请求参数，考虑到多参数的场景，应该返回一个数组
+       * 参数处理钩子函数
+       * 1、为查询方法生成请求参数，考虑到多参数的场景，应该返回一个数组
+       * 2、如果返回false，则不进行查询，相当于参数校验方法
        * @param {object} defaultParams - 默认查询参数
-       * @returns {array} - 查询参数
+       * @returns {array | boolean} - 如果返回false，则不进行查询，如果返回数组，则直接作为查询参数
        */
       queryParamsHandle(defaultParams) {
         return [defaultParams];
@@ -305,6 +284,7 @@ export function createTableMixin(options = {}) {
        * @param {string[]|'all'} arr - 要重置的状态，['selection', 'sort', 'filter']
        */
       tableReset(arr = "all") {
+        if (!this.$refs.simpleTable) return;
         const array = arr === "all" ? ["selection", "sort", "filter"] : arr;
 
         if (array.includes("selection")) {
