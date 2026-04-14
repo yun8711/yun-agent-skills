@@ -1,0 +1,30 @@
+/**
+ * 国际化样式兼容 - 多语言 & RTL 布局
+ * 支持：中文(zh)、英文(en)、日文(jp)、阿拉伯语(ar)
+ */
+// 需要被镜像的样式
+.el-scrollbar .el-scrollbar__wrap {
+  // /* 与 element-ui 滚动条槽宽度一致，若个别环境 gutter 非 15px 可微调 */
+  margin-inline-start: 0 !important;
+  margin-inline-end: -15px !important;
+}
+
+/* rtl:begin:ignore */
+// 不需要被镜像的样式
+[dir="rtl"] {
+  .kd-sticky-page{
+    &__side{
+      right:0;
+    }
+
+    &__content{
+      margin-right:var(--side-width);
+      margin-left:0!important;
+    }
+  }
+}
+// 模型关系页面，svg中的内容，需要保持ltr
+.page .right-part .er-content[data-v-6cbd97bd] .x6-node foreignObject{
+  direction: ltr;
+}
+/* rtl:end:ignore */
