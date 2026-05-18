@@ -1,6 +1,6 @@
 ---
 name: personal-ledger
-description: Manages personal income, expense and transfer records using SQLite with industry-standard design. Supports natural language recording (including transfers from A to B as single transfer record), monthly reports (excluding transfers from totals), account balance tracking. Use when user mentions 记账, 记一笔, 转账, 转钱, 从A转到B, 收支, 月报, 报告, 财务总结, ledger, budget. Always read schema.sql, reference.md and scripts/ledger.py first, then use Shell tool to execute functions.
+description: Manages personal income, expense and transfer records using SQLite with industry-standard design. Supports natural language recording (including transfers from A to B as single transfer record), monthly reports (excluding transfers from totals), unique account names, soft-delete only. Use when user mentions 记账, 记一笔, 转账, 转钱, 从A转到B, 收支, 月报, 报告, 财务总结, ledger. Always read schema.sql, reference.md and scripts/ledger.py first, then use Shell tool to execute functions.
 ---
 
 # personal-ledger
@@ -19,25 +19,27 @@ description: Manages personal income, expense and transfer records using SQLite 
 4. **查询**：
    - “生成本月报告”
    - “显示最近10笔记录”
-   - “我的账户余额情况”
+   - “我现在有哪些账户”
 
-Agent 会自动解析账户名称或别称，正确处理转账，并过滤转账记录避免总收支虚高。
+Agent 会自动解析账户名称或别称，正确处理转账，并过滤转账记录避免总收支虚高。**新建账户必须用 `create_account()`**；不可用 SQL `DELETE` 删除账户。
 
 ## How-to Guides
 
 ### 记录转账（核心功能）
 - 使用自然语言描述“从A转到B金额”
 - Agent 会创建一条 `type='transfer'` 记录，同时关联转出和转入账户
-- 余额自动更新：转出账户减少，转入账户增加
 - 报告中自动排除转账记录
 
 ### 生成财务报告
 - 调用 `monthly_report()`，自动过滤 `transfer` 类型
 - 提供汇总、分类明细 + 智能洞察（“本月餐饮占比42%”等）
 
-### 账户管理
-- 支持别称匹配（例如“招行卡”可匹配“招商银行卡”）
-- 默认包含储值卡、贷款账户等常用类型
+### 账户管理（约束）
+- **账户名称全局唯一**（库 UNIQUE + `create_account`）；禁止重复开户
+- **只允许软删除**：`deactivate_account(name)`（`is_active=0`）；已停用同名不可再 INSERT，应用 **`reactivate_account(name)`** 恢复
+- 数据库 **`DELETE FROM accounts` 被触发器拒绝**（除升级迁移去重脚本外勿尝试）
+- 首次 `init_db()` 如发现历史重复名称，会自动合并外键到最小 `id` 再建唯一索引
+- 记账匹配仅 **`is_active=1`**；支持别称（`aliases` JSON）
 
 ## Reference
 
@@ -59,7 +61,7 @@ Agent 会自动解析账户名称或别称，正确处理转账，并过滤转�
 - 结构清晰，易于维护和未来扩展
 - 避免总收入/总支出统计失真
 - 符合复式记账思想的简化版
-- 便于生成准确的账户余额和财务报告
+- 以流水汇总为主，`current_balance` 字段不随交易自动维护（schema 预留）
 
 **触发场景**：
 - 任何包含“记账”、“转账”、“从...转到...”、“月报”、“报告”、“余额”等关键词的请求。

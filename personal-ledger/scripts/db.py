@@ -9,6 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+from migrations import migrate_accounts_constraints
+
 DB_PATH = Path(__file__).parent.parent / "ledger.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -37,7 +39,7 @@ def init_db() -> None:
             -- 账户主表
             CREATE TABLE IF NOT EXISTS accounts (
                 id              INTEGER PRIMARY KEY,
-                name            TEXT NOT NULL,
+                name            TEXT NOT NULL UNIQUE,
                 aliases         TEXT,
                 type_id         INTEGER NOT NULL,
                 current_balance REAL DEFAULT 0.0,
@@ -140,6 +142,7 @@ def init_db() -> None:
                 ('其他支出', 'expense', NULL);
         """)
 
+        migrate_accounts_constraints(conn)
         conn.commit()
         print(f"✅ 数据库初始化完成: {DB_PATH}")
         print("   已包含标准转账支持（type='transfer' + from/to account）")
@@ -178,9 +181,9 @@ def add_transaction(
             INSERT INTO transactions 
             (date, amount, type, account_id, from_account_id, to_account_id, category_id, description, tags)
             VALUES (?, ?, ?, 
-                    (SELECT id FROM accounts WHERE name = ? OR aliases LIKE ? LIMIT 1),
-                    (SELECT id FROM accounts WHERE name = ? OR aliases LIKE ? LIMIT 1),
-                    (SELECT id FROM accounts WHERE name = ? OR aliases LIKE ? LIMIT 1),
+                    (SELECT id FROM accounts WHERE is_active = 1 AND (name = ? OR aliases LIKE ?) ORDER BY id LIMIT 1),
+                    (SELECT id FROM accounts WHERE is_active = 1 AND (name = ? OR aliases LIKE ?) ORDER BY id LIMIT 1),
+                    (SELECT id FROM accounts WHERE is_active = 1 AND (name = ? OR aliases LIKE ?) ORDER BY id LIMIT 1),
                     (SELECT id FROM categories WHERE name = ? LIMIT 1),
                     ?, ?)
             """,

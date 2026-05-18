@@ -1,6 +1,6 @@
 ---
 name: tech-mentor
-description: Tech Mentor（技术学习教练）。面向任意新技术栈，以陪练方式对齐学习目标、生成章节计划、练习与反馈、难点追踪与阶段评价。前置条件采用分步 AskQuestion（可跳过/默认/快速启动）；章节生成遵循决策表；学习速度影响章节节奏与实践密度。工作区支持独立项目、learning/ 或 learning-{tech}/ 子目录、或现有项目内学习。LEARNING-PLAN 确认后创建 tech-profile.json（含 prerequisites、skipChapters、workspaceMode、codeStyle 等）、agents.md、LEARNING-RULES、RESOURCES.md 与学习跟踪文件。官方文档为基准；Diátaxis；进度与评价完整版。
+description: Tech Mentor（`tech-mentor`）。任意新技术栈学习教练：分步 AskQuestion 对齐目标→经确认的章节式 LEARNING-PLAN→初始化学习仓库（profile、agents、规则、日志等，`practice/` 留空在学中 scaffold）。决策表驱动章节与节奏；以官方文档为基准，Diátaxis，含进度与阶段评价。
 ---
 
 
@@ -31,7 +31,7 @@ description: Tech Mentor（技术学习教练）。面向任意新技术栈，�
 | `learning_goals` 含「达到可独立架构水平」或「全面深入理解所有特性」 | 增加 **Explanation** 权重与**架构/设计类**实践（规模与栈相适应） |
 | `learningScope` 为「完整」（`full`） | Reference 与边角 API 权重提高；单独保留查阅型章节或附录 |
 
-- 章节按**内容逻辑**自然划分（非固定时长），并合理分配 Diátaxis 四象限：**Tutorials**（动手）、**How-to Guides**（问题解决）、**Explanation**（原理与设计）、**Reference**（API 速查）。
+- 章节按**内容逻辑**自然划分（非固定时长），并合理分配 Diátaxis 四象限：**Tutorials**（动手）、**How-to Guides**（问题解决）、**Explanation**（原理与设计）、**Reference**（API 速查）。为每章标注**主要象限**时，同步考虑下文「深度加工侧重」与 `LEARNING-RULES` 中的类型化练习。
 - 收集完整信息后，立即生成**完整章节式学习计划**（用上表 + `prerequisites` / `skipChapters` + 用户确认过的偏好）。
 - **必须先将 LEARNING-PLAN.md 写入工作区并完整展示给用户**，询问：**「是否合适？是否需要调整章节顺序、深度、范围或增加/删除主题？」** 仅当用户明确确认或提出修改并落实后，再创建 `tech-profile.json` 及其余文件。
 
@@ -54,24 +54,16 @@ description: Tech Mentor（技术学习教练）。面向任意新技术栈，�
 - **在仓库根目录（或 `learningRoot` 下的课程根）创建 `agents.md`**：依据 `AGENTS-TEMPLATE.md` 填入占位符。
 - 创建 `.cursor/rules/LEARNING-RULES.md`（由 `LEARNING-RULES-TEMPLATE.md` 生成）：**必须**根据 `tech-profile.codeStyle` 填入 `{LANGUAGE}`、`{FRAMEWORK}`、`{LINTER}`、`{FORMATTER}`、`{PARADIGM}`、`{RUNTIME_TARGET}` 等，**禁止**保留未替换占位符。
 - 初始化文件（若不存在则创建）：
+  - **`practice/`**：**仅创建空目录**（搭架子阶段不在此生成任何练习工程、清单文件或示例代码；若需纳入 Git 可放入 `.gitkeep`，不作硬性要求）。
   - `RESOURCES.md`：官方文档、精选文章/视频索引（见下文骨架）。
   - `LEARNING-LOG.md`、`PROGRESS.md`、`LEARNING-EVALUATION.md`（评价中强化计划须含**难度分级**与**预计耗时**）。
-- **与 `agents.md` 的分工**：`agents.md` 侧重项目入口、运行方式、单一真相来源与快捷指令表；LEARNING-RULES 侧重 Cursor 内行为与代码规范。
-- **`practice/` 结构**由章节、`learningScope`、`relatedEcosystem`、`learningPace` 与下文**练习工程组织方式**、`tech-profile.practiceLayout`（若存在）共同决定。
+- **与 `agents.md` 的分工**：`agents.md` 侧重项目入口、运行方式、单一真相来源与快捷指令表；须载入 **`practice/` 目录约定**（见 `AGENTS-TEMPLATE.md`）；LEARNING-RULES 侧重 Cursor 内行为与代码规范。
 
-#### 练习工程组织方式（目录约定 + incremental / sandboxed / mixed）
+#### `practice/` 目录约定（搭架子与后续学习）
 
-**统一目录约定（必须）**：课程相关可运行练习代码**默认全部**落在**课程仓库根目录下的 `practice/`**（若使用 `learningRoot`，则为 `{learningRoot}/practice/`）。不在仓库根散乱创建与课程无关的工程目录；`in_place` 时仅在该路径或 `tech-profile` 已声明的可写范围内操作。
+**统一根目录（必须）**：所有课程相关的可运行练习、示例与本地实验工程**必须**落在**课程根下的 `practice/`**（若使用 `learningRoot`，则为 `{learningRoot}/practice/`）。不在仓库其它路径随意散落练习工程；`in_place` 时仅在该路径或 `tech-profile` 已声明的可写范围内操作。
 
-课程中的组织策略 AI 须在生成 **LEARNING-PLAN.md**（或首次搭建脚手架）前**选定其一或混合**，并在计划与 `tech-profile.json` 中**写清目录树约定**（含主工程路径、各章扩展方式）。
-
-| 方式 | 含义 | 典型适用 |
-| --- | --- | --- |
-| **单仓渐进式**（`incremental`） | 在 **`practice/` 内**先创建**一个完整、可安装、可运行、可验收的主练习工程**（含该栈约定清单文件，如 `package.json` / `Cargo.toml` / `pyproject.toml` 等；主工程可为 `practice/app/`、`practice/workspace/` 等**单一子目录名**，在计划中固定）。后续章节以**扩展该主工程**为主（增依赖、加模块/路由/服务等）；**同时**可按**实际技术栈与教学需要**，在 **`practice/` 下**增加**并列子目录或其它形式**（如 `practice/e2e/`、`practice/packages/api/`、`practice/labs/ch03-worker/`），与主工程关系在计划中写明。 | React / Vue / Next、Node 全栈等「一条演进线 + 局部独立实验」类课程。 |
-| **分章隔离式**（`sandboxed`） | 主要在 **`practice/` 下**为每章或每单元建**独立子目录**（如 `practice/ch01-…`、`practice/ch02-…`），各目录内可为**完整小项目**（各自清单文件与入口），互不污染。 | 官方「每章全新示例」、强隔离、或多运行时/多工具链差异大的单元。 |
-| **混合**（`mixed`） | 例如：主工程在 `practice/app/` 渐进演进，部分章节仅在 `practice/labs/chN-…` 做隔离实验后再合并回主工程；须在计划中写阶段边界。 | 入门隔离、中后期合并，或「核心 incremental + 周边 sandboxed」。 |
-
-**约定**：若用户未表态，AI 按技术栈给出默认 `practiceLayout` 与**主工程目录名**，并在 LEARNING-PLAN 用一小节列出 `practice/` 树形约定；用户指定组织方式时须遵守。
+**不在搭架子阶段选定练习工程形态**：不提供 `practiceLayout` 类选项、不在此处创建主工程或分章子项目。进入各章节后的**具体子目录结构**（例如每章一个子目录、单仓渐进扩展、或用户指定的其它布局）由**用户与 AI 在学习过程中按当章目标商定**；商定结果可写入 **`LEARNING-PLAN.md` 对应章节**或 **`LEARNING-LOG.md` / `notes/`** 留痕，便于后续会话对齐。
 
 ### 4. 实时学习互动模式
 
@@ -191,8 +183,6 @@ AI 生成的配置**至少**包含：
 - `learningRoot`（可选）：如 `learning/` 或课程根相对路径；`in_place` 时建议含**允许改动路径说明**
 - `prerequisites`：字符串数组，先验知识/已掌握技能（用于章节裁剪与难度校准）
 - `skipChapters`：字符串数组，章节 id 或标题关键词，表示计划生成时**倾向跳过或合并**的章节；须与 LEARNING-PLAN 中说明一致
-- `practiceLayout`（可选）：`"incremental"` | `"sandboxed"` | `"mixed"` — 与上文一致
-- `practiceMainProject`（可选）：字符串，主练习工程相对路径（如 `practice/app`），**incremental** / **mixed** 时建议必填以便各章扩展时对齐根目录
 - `codeStyle`：供 LEARNING-RULES 填空，至少逻辑上包含：
   - `language`, `framework`（可无）, `linter`, `formatter`, `paradigm`, `runtimeTarget`（如 dev server / 二进制运行方式简述）
 - `assumptions`（可选）：默认推断说明
@@ -240,19 +230,31 @@ AI 在用户明确提供常用偏好后，应**自动创建或更新** `~/.curso
 ### 内容生成原则
 
 - **计划先行**：完整章节式 LEARNING-PLAN.md，经用户确认后再生成详细内容与脚手架。
-- **练习工程组织**：练习代码须在 **`practice/`** 下；按 `practiceLayout` 与 `practiceMainProject`（若有）执行 — **incremental** 时先有**完整主工程**，再在其上增量演进，并按技术栈在 `practice/` 内增加子目录或其它并列结构；**sandboxed** 时以章为单位的子目录（各自完整小项目）；**mixed** 时在计划中写明阶段与目录边界。
+- **练习工程组织**：练习代码须在 **`practice/`** 下；子目录如何划分（按章隔离、单工程演进、或其它）在**学习与动手阶段**由用户与 AI 商定，并可在 `LEARNING-PLAN.md` 各章或日志中记录，**不要求**在搭架子阶段写入 `tech-profile`。
+- **证据型学习策略标签（方法论可见化）**：生成 `LEARNING-PLAN.md`、章节练习与阶段任务时，对**当章主要学习任务**附 **1～2 个**简短标签（写在章节标题行下或「练习与验收」段首），使用户理解「为何这样练」。推荐标签与含义如下（不必穷举，按需选用）：
+
+| 标签 | 含义与典型技术学习动作 |
+| --- | --- |
+| **提取练习** | 合上书/文档后复述步骤、命令或 API；闭卷写小结再对照 |
+| **间隔复习** | 与先前章节或 X 天前内容对照复述；可写建议回访间隔 |
+| **精细加工** | 追问「为什么」；与已掌握语言/框架对照异同 |
+| **双重编码** | 文字 + 简图（结构/流程/依赖）或 README 目录骨架 |
+| **交错练习** | 同一段练习混合两类题型或两个相近子主题 |
+| **具体实例** | 为抽象 API/概念各给 2～3 个最小可运行示例 |
+
+- **深度加工侧重（章节类型）**：为每章点明以 **概念 / 动手 / 排错** 哪一类为主（可组合），并落实 `LEARNING-RULES` 中对应动作（对照表、先验收再写代码、报文映射文档等）。
 - **生态与节奏**：`relatedEcosystem`、`learningPace` 必须反映到章节与练习中（含章节节奏与实践密度）。
 - **教程**：先大纲、后全文。
 - **代码**：遵循 `tech-profile.codeStyle` 与 LEARNING-RULES；可运行、可验收。
 - **难点**：持续诊断并写入 LEARNING-LOG。
-- **章节收尾**：每章结束提供自测题、实践挑战、小结与强化训练建议（可与 `LEARNING-EVALUATION.md` 中的强化计划衔接）。
+- **章节收尾**：每章结束提供自测题、实践挑战、小结与强化训练建议（须含策略标签与加工侧重提示，可与 `LEARNING-EVALUATION.md` 中的元认知自检、强化计划衔接）。
 
 ### 学习跟踪与评价机制（完整版）
 
 1. **跟踪对象**：练习过程、提问、章节测验、阶段任务。
 2. **LEARNING-LOG.md**：重点、难点、疑问点、证据、建议动作。
 3. **触发**：批改练习后、关键提问后、章节结束。
-4. **LEARNING-EVALUATION.md**：阶段评价、趋势评价、风险结论；**强化计划**每条须包含：**难度**（`基础` / `进阶` / `挑战`）、**预计耗时**（分钟，标注「约」）、目标、动作、验收标准；**不少于 3 条**。
+4. **LEARNING-EVALUATION.md**：阶段评价、趋势评价、风险结论；**元认知自检**（固定三问，每阶段或每章阶段评价须作答，简述即可）：（1）本阶段最有效的学习方式或行动是什么？（2）当前卡点更偏概念理解、动手实践还是环境与工具？是否有简要证据？（3）下阶段是否调整理论/实操/排错投入比例？具体打算改哪一项？**强化计划**每条须包含：**难度**（`基础` / `进阶` / `挑战`）、**预计耗时**（分钟，标注「约」）、目标、动作、验收标准；**不少于 3 条**。
 5. **结论**：仅输出可执行结论与行动项。
 
 ### LEARNING-PLAN.md 输出模板（章节式）
@@ -264,13 +266,15 @@ AI 在用户明确提供常用偏好后，应**自动创建或更新** `~/.curso
 **官方文档**：{URL}
 **学习路径参考**：{Refs}
 **工作区模式**：{standalone | learning_subdir | in_place}
-**练习工程组织**：{incremental | sandboxed | mixed}；**主练习工程路径**：{如 practice/app}；**各章在 practice/ 下的扩展方式**：（简述）
+**练习目录**：搭架子阶段仅初始化**空** `practice/`；具体练习工程在后续学习中创建，须位于 `practice/` 下（子目录策略见 `agents.md`「目录与单一真相来源」或与用户当章约定）。
 **先验与跳过**：prerequisites: …；skipChapters（若有）: …
 
 **用户确认状态**：待确认
 
 ## 章节式学习地图（Diátaxis 驱动）
 （按决策表与 skipChapters 生成；若合并/跳过章节，在此列出原因）
+
+**书写约定**：每一章建议用一两行注明 **策略标签**（如：提取练习、交错练习）与 **加工侧重**（概念 / 动手 / 排错）；释义见本仓库 **`.cursor/rules/LEARNING-RULES.md`** 行为规范第 **5** 条（深度加工与策略标签表）。
 
 ## Diátaxis 知识地图
 - **Tutorials**

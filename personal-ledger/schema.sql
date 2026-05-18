@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS account_types (
 -- 2. 具体账户 (Accounts) - 核心表
 CREATE TABLE IF NOT EXISTS accounts (
     id              INTEGER PRIMARY KEY,
-    name            TEXT NOT NULL,                    -- 账户正式名称（如 "招商银行信用卡"）
+    name            TEXT NOT NULL UNIQUE,                 -- 正式名称全局唯一，禁止重复开户
     aliases         TEXT,                             -- 别称，JSON格式数组（如 ["招行卡","CC","信用卡"]）
     type_id         INTEGER NOT NULL,
     current_balance REAL DEFAULT 0.0,                 -- 当前余额（收入增加，支出/转出减少）
