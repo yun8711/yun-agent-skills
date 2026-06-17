@@ -1,0 +1,46 @@
+{
+  "params": {
+    "entry": "src/main2.js",
+    "doc_count": 1,
+    "lines_per_page": 50,
+    "target_pages": 1,
+    "target_docx_lines": 50,
+    "obfuscation": "light",
+    "output_dir": "out7",
+    "layout": {
+      "page_width_mm": 210.0,
+      "page_height_mm": 297.0,
+      "margin_top_cm": 2.5,
+      "margin_bottom_cm": 2.5,
+      "margin_left_cm": 2.0,
+      "margin_right_cm": 2.0,
+      "lines_per_page": 50,
+      "line_spacing_twips": 280,
+      "line_spacing_pt": 14.0,
+      "font_name": "宋体",
+      "font_size_pt": 10.5
+    }
+  },
+  "master": "source-master.docx",
+  "total_pages": 1,
+  "documents": [
+    {
+      "file": "source-doc-01.docx",
+      "page_start": 1,
+      "page_end": 1,
+      "page_count": 1
+    }
+  ],
+  "source_segments": [
+    {
+      "path": "src/main2.js",
+      "source_lines": 4,
+      "obfuscated": false
+    },
+    {
+      "path": "src/big.js",
+      "source_lines": 120,
+      "obfuscated": false
+    }
+  ]
+}
