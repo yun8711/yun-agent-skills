@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Link repository skills into Codex USER scope (~/.agents/skills).
-# Codex follows symlinks when scanning skill locations.
+# Codex follows symlinks (Unix) and junctions (Windows) when scanning skill locations.
 #
 # Usage:
 #   ./scripts/link-codex-skills.sh          # link all skills (default)
 #   ./scripts/link-codex-skills.sh link     # same as default
-#   ./scripts/link-codex-skills.sh unlink   # remove symlinks created by this repo
+#   ./scripts/link-codex-skills.sh unlink   # remove links created by this repo
 #   ./scripts/link-codex-skills.sh status   # show link state
 
 set -euo pipefail
@@ -14,6 +14,97 @@ readonly CODEX_USER_SKILLS="${CODEX_USER_SKILLS:-$HOME/.agents/skills}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
+
+# ── Platform detection ────────────────────────────────────────────────
+
+is_windows() {
+  local os
+  os="$(uname -s 2>/dev/null || echo 'Windows')"
+  [[ "$os" == *"MINGW"* || "$os" == *"MSYS"* || "$os" == *"CYGWIN"* || -n "${WINDIR:-}" ]]
+}
+
+# Convert a Git-Bash/MSYS Unix-style path to a Windows native path.
+# /c/Users/... → C:\Users\...
+win_path() {
+  local p="$1"
+  if command -v cygpath &>/dev/null; then
+    cygpath -w "$p"
+  else
+    echo "$p" | sed 's|^/\([a-zA-Z]\)/|\1:\\|' | sed 's|/|\\|g'
+  fi
+}
+
+# ── Cross-platform link helpers ───────────────────────────────────────
+# On Windows, PowerShell queries junction state; Git Bash rm removes them.
+
+is_link() {
+  local p="$1"
+  if is_windows; then
+    local wp out
+    wp="$(win_path "$p")"
+    out="$(powershell.exe -NoProfile -Command \
+      "\$i=Get-Item -LiteralPath '$wp' -Force -EA SilentlyContinue; if(\$i.LinkType){Write-Output 1}")"
+    [[ -n "$out" ]]
+  else
+    [[ -L "$p" ]]
+  fi
+}
+
+link_points_to_repo() {
+  local target="$1"
+  local skill_name="$2"
+  local expected="$repo_root/$skill_name"
+
+  if is_windows; then
+    is_link "$target" || return 1
+
+    local wt we actual
+    wt="$(win_path "$target")"
+    we="$(win_path "$expected")"
+    actual="$(powershell.exe -NoProfile -Command \
+      "\$i=Get-Item -LiteralPath '$wt' -Force -EA Stop; Write-Output \$i.Target")"
+    [[ -z "$actual" ]] && return 1
+    # Normalise: strip trailing slash, compare case-insensitively
+    actual="${actual%/}"
+    we="${we%/}"
+    [[ "${actual,,}" == "${we,,}" ]]
+  else
+    [[ -L "$target" ]] || return 1
+    local actual
+    actual="$(cd "$(dirname "$target")" && readlink "$(basename "$target")")" || return 1
+    local resolved
+    resolved="$(cd "$(dirname "$target")" && cd "$actual" && pwd)" || return 1
+    local expected_resolved
+    expected_resolved="$(cd "$expected" && pwd)" || return 1
+    [[ "$resolved" == "$expected_resolved" ]]
+  fi
+}
+
+create_link() {
+  local src="$1"
+  local dest="$2"
+  if is_windows; then
+    local ws wd
+    ws="$(win_path "$src")"
+    wd="$(win_path "$dest")"
+    powershell.exe -NoProfile -Command \
+      "New-Item -ItemType Junction -Path '$wd' -Target '$ws' -Force" >/dev/null
+  else
+    ln -sfn "$src" "$dest"
+  fi
+}
+
+remove_link() {
+  local p="$1"
+  if is_windows; then
+    # Git Bash rm handles junctions: removes the reparse point, not the target
+    rm -f "$p" 2>/dev/null || true
+  else
+    rm "$p"
+  fi
+}
+
+# ── Skill discovery (platform-agnostic) ───────────────────────────────
 
 usage() {
   cat <<'EOF'
@@ -26,6 +117,9 @@ Commands:
 
 Environment:
   CODEX_USER_SKILLS   Target directory (default: ~/.agents/skills)
+
+On Windows, directory junctions are used instead of symlinks (no admin
+required). Codex follows both.
 
 After linking, restart Codex if new skills do not appear immediately.
 EOF
@@ -47,17 +141,7 @@ list_repo_skills() {
   done | sort
 }
 
-link_points_to_repo() {
-  local target="$1"
-  local skill_name="$2"
-  local expected="$repo_root/$skill_name"
-
-  [[ -L "$target" ]] || return 1
-  local actual
-  actual="$(cd "$(dirname "$target")" && readlink "$(basename "$target")")"
-  [[ "$(cd "$(dirname "$actual")" 2>/dev/null && pwd)/$(basename "$actual")" == "$expected" ]] || \
-    [[ "$actual" == "$expected" ]]
-}
+# ── Commands ──────────────────────────────────────────────────────────
 
 cmd_link() {
   local skill
@@ -72,27 +156,25 @@ cmd_link() {
     local src="$repo_root/$skill"
     local dest="$CODEX_USER_SKILLS/$skill"
 
-    if [[ -e "$dest" || -L "$dest" ]]; then
+    if [[ -e "$dest" ]] || is_link "$dest"; then
       if link_points_to_repo "$dest" "$skill"; then
         echo "skip  $skill (already linked)"
         skipped=$((skipped + 1))
         continue
       fi
-      if [[ -L "$dest" ]]; then
-        echo "update $skill (replacing existing symlink)"
-        rm "$dest"
+      if is_link "$dest"; then
+        echo "update $skill (replacing existing link)"
+        remove_link "$dest"
         updated=$((updated + 1))
       else
-        echo "error $skill: $dest exists and is not a symlink to this repo" >&2
+        echo "error $skill: $dest exists and is not a link to this repo" >&2
         exit 1
       fi
     fi
 
-    ln -sfn "$src" "$dest"
-    if [[ $updated -eq 0 || ! -e "$dest" ]]; then
-      echo "link  $skill -> $dest"
-      created=$((created + 1))
-    fi
+    create_link "$src" "$dest"
+    echo "link  $skill -> $dest"
+    created=$((created + 1))
   done < <(list_repo_skills)
 
   echo ""
@@ -110,14 +192,14 @@ cmd_unlink() {
     [[ -n "$skill" ]] || continue
     local dest="$CODEX_USER_SKILLS/$skill"
 
-    if [[ ! -e "$dest" && ! -L "$dest" ]]; then
+    if [[ ! -e "$dest" ]] && ! is_link "$dest"; then
       echo "skip  $skill (not present)"
       skipped=$((skipped + 1))
       continue
     fi
 
     if link_points_to_repo "$dest" "$skill"; then
-      rm "$dest"
+      remove_link "$dest"
       echo "unlink $skill"
       removed=$((removed + 1))
     else
@@ -155,6 +237,8 @@ cmd_status() {
   echo ""
   echo "linked=$linked missing=$missing"
 }
+
+# ── Entry point ───────────────────────────────────────────────────────
 
 main() {
   local cmd="${1:-link}"
